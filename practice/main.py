@@ -19,23 +19,6 @@ app = FastAPI()
 class ChatRequest(BaseModel):
     user_message: str
 
-# Streaming generator to send responses line by line
-async def stream_response(prompt: str):
-    try:
-        # Initialize the model
-        model = genai.GenerativeModel("gemini-1.5-flash")
-        response = model.generate_content(prompt, stream=True,generation_config = genai.GenerationConfig(
-        max_output_tokens=100,
-        temperature=0.1,
-    ))
-        # Use the model's `generate_content_stream` to get streaming results
-        for chunk in response:
-            # Yield each line of the response
-            yield f"{chunk.text}\n"
-    except Exception as e:
-        # Yield an error message in case of failure
-        yield f"Error: {str(e)}"
-
 # Endpoint for chatbot interaction (Streaming Response)
 @app.post("/chat")
 async def chat_with_bot(chat_request: ChatRequest):
@@ -43,7 +26,13 @@ async def chat_with_bot(chat_request: ChatRequest):
         # Get the user message
         user_message = chat_request.user_message
 
-        # Stream the bot's response
-        return StreamingResponse(stream_response(user_message), media_type="text/plain")
+        # Initialize the model
+        model = genai.GenerativeModel("gemini-1.5-flash")
+        response = model.generate_content(user_message,generation_config = genai.GenerationConfig(
+        max_output_tokens=1000,
+        temperature=0.9,
+        ))
+        # Return the AI response
+        return {"reply": response.text}
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
