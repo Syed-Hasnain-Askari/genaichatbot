@@ -3,6 +3,7 @@ from pydantic import BaseModel
 import google.generativeai as genai # type: ignore
 from fastapi.responses import StreamingResponse
 from dotenv import load_dotenv
+from fastapi.middleware.cors import CORSMiddleware
 import os
 
 # Load the .env file
@@ -14,6 +15,15 @@ API_KEY = os.getenv("GEMINI_API_KEY")
 genai.configure(api_key=API_KEY)
 
 app = FastAPI()
+
+# Enable CORS
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 # Define the request body schema
 class ChatRequest(BaseModel):
@@ -32,6 +42,7 @@ async def stream_response(prompt: str):
         for chunk in response:
             # Yield each line of the response
             yield f"{chunk.text}\n"
+            print(f"{chunk.text}\n")
     except Exception as e:
         # Yield an error message in case of failure
         yield f"Error: {str(e)}"
